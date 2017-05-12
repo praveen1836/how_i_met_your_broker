@@ -44,7 +44,7 @@ namespace :hack do
   end
 
   def get_product_details product_id
-    logger = Logger.info("#{Rails.root}/log/failed_crawler.log")
+    logger = Logger.new("#{Rails.root}/log/failed_crawler.log")
     begin
       url = "https://www.99acres.com/99api/v12/addeoi/733f5e4816a8ebb4e4d5d1c969420c1e2f8a375a2854e4a760d4cab00280317444378a608f2a2249950e54537b4e191eaebf5dede0a64d3dfb623d0ab83142af/?rtype=json?&prop_id=#{product_id}&phone=1-3526143845&SOURCE_L1=C2V&rtype=json&AppVersion=6.4.0&identityRadio=I&_vis_mail=&profileid=23890123&email=gvos@tralalajos.gq&GOOGLE_SEARCH_ID=570532684477724403&share_mobile_info=Y&clientId=570532684477724403&AppVersionCode=60&SOURCE_L2=PROPERTY&visitorid=570532684477724403&name=Prats&owner_profile_id=11594041"
       response = Net::HTTP.get_response(URI.parse(url))
