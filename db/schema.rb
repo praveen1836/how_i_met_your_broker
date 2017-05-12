@@ -11,21 +11,38 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170512162407) do
+ActiveRecord::Schema.define(version: 20170512192206) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "brokers", force: :cascade do |t|
-    t.string   "phone_number"
-    t.string   "name"
+    t.string   "phone_number",    null: false
+    t.string   "name",            null: false
     t.string   "company_name"
-    t.string   "city_name"
+    t.string   "city"
     t.string   "locality"
-    t.string   "package_type"
-    t.string   "product_id"
-    t.datetime "created_at",   null: false
-    t.datetime "updated_at",   null: false
+    t.string   "package_id"
+    t.boolean  "is_subscribed"
+    t.datetime "subscribed_at"
+    t.datetime "unsubscribed_at"
+    t.datetime "created_at",      null: false
+    t.datetime "updated_at",      null: false
   end
+
+  add_index "brokers", ["phone_number"], name: "index_brokers_on_phone_number", using: :btree
+
+  create_table "packages", force: :cascade do |t|
+    t.string "name",     null: false
+    t.string "price"
+    t.string "duration"
+  end
+
+  create_table "properties", force: :cascade do |t|
+    t.string  "property_id", null: false
+    t.integer "broker_id",   null: false
+  end
+
+  add_index "properties", ["broker_id"], name: "index_properties_on_broker_id", using: :btree
 
 end
