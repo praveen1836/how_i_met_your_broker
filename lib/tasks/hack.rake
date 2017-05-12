@@ -58,7 +58,7 @@ namespace :hack do
           end
         end
         page_no += 1
-        break if page_no > 10
+        break if page_no > 300
       end
 
     end
