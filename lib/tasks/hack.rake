@@ -9,7 +9,7 @@ namespace :hack do
 
   def get_product_ids city_url, page_no
     a = Wombat.crawl do
-      base_url "http://www.99acres.com/#{city_url}?page_no=#{page_no}"
+      base_url "http://www.99acres.com/#{city_url}?page=#{page_no}"
       path "/"
       product_ids "xpath=//*[@id='results']/div/div/@data-propid", :list
     end
