@@ -80,4 +80,13 @@ namespace :hack do
     end
   end
 
+  task :cleanup => :environment do
+    Broker.where("LENGTH(phone_number) > 13").each do |broker|
+      puts broker.phone_number + "-#{broker.id}"
+      # phone = broker.phone_number.split(',').second
+      # broker.phone_number = phone
+      # puts broker.save
+    end
+  end
+
 end 
