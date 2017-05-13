@@ -65,7 +65,7 @@ namespace :hack do
         product_ids = get_product_ids(city_url, page_no)
         product_ids.each do |id|
           details = get_product_details(id)
-          if details["eCommTrackData"][0]["product_type"] != "Free Listing"
+          if details["eCommTrackData"][0]["product_type"] != "Free listing"
             b, p, package, city = store_broker_details(details, id, packages)
             puts "saved brokers #{broker_count += 1}, Broker: #{b}, Property: #{p}, Package: #{package}, City: #{city}"
           end
