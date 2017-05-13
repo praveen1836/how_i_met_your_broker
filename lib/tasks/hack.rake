@@ -6,7 +6,6 @@ namespace :hack do
     "99acres" => ["/rent-property-in-bangalore-ffid", "/rent-property-in-chennai-ffid", "/rent-property-in-kolkata-ffid", "/rent-property-in-hyderabad-ffid", "/rent-property-in-mumbai-ffid"]
   }
 
-
   def get_product_ids city_url, page_no
     a = Wombat.crawl do
       base_url "http://www.99acres.com/#{city_url}?page=#{page_no}"
@@ -16,8 +15,43 @@ namespace :hack do
     a["product_ids"]
   end
 
+  def handle_sub_unsub details, id, packages
+    phone = details["advertiserDetails"][0]["OwnerMobile"].split(",").first
+    params = {}
+    b_details = details["eCommTrackData"].first
+    params[:locality] = b_details["locality"]
+    params[:package_id] = packages[b_details["product_type"]]
+    params[:city] = b_details["city"]
+    params[:company_name] =  "99acres"
+    params[:name] = details["advertiserDetails"][0]["OwnerName"]
+    params[:phone_number] = phone
+    b = Broker.find_by(:phone_number => phone)
+    if b.present?
+      if params[:package_id] == 1 && b.package_id.to_i != 1
+        b.handle_unsubscription
+        b.save
+        flag = "unsubscribed"
+      end
+      p = Property.find_by(:property_id => id, :broker_id => b.id)
+      return b.id, p.id, b_details["product_type"], b.city, flag  if p.present?
+      property_params = {:property_id => id, :broker_id => b.id}
+      p = Property.create(property_params)
+      return b.id, p.id, b_details["product_type"], b.city, flag
+    end
+
+    if b.blank? && params[:package_id] != 1
+      broker = Broker.new(params)
+      broker.handle_subscription
+      broker.save
+      flag = "subscribed"
+      property_params = {:property_id => id, :broker_id => broker.id}
+      p = Property.create(property_params)
+      return broker.id, p.id, b_details["product_type"], broker.city, flag
+    end
+  end
+
   def store_broker_details details, id, packages
-    phone = details["advertiserDetails"][0]["OwnerMobile"]
+    phone = details["advertiserDetails"][0]["OwnerMobile"].split(",").first
     params = {}
     b_details = details["eCommTrackData"].first
     params[:locality] = b_details["locality"]
@@ -37,10 +71,11 @@ namespace :hack do
       return b.id, p.id, b_details["product_type"], b.city
     end
     broker = Broker.new(params)
-    broker.save
-    property_params = {:property_id => id, :broker_id => broker.id}
-    p = Property.create(property_params)
-    return broker.id, p.id, b_details["product_type"], broker.city
+    if broker.save
+      property_params = {:property_id => id, :broker_id => broker.id}
+      p = Property.create(property_params)
+    end
+    return broker.id, (p.id rescue nil), b_details["product_type"], broker.city
   end
 
   def get_product_details product_id
@@ -74,6 +109,29 @@ namespace :hack do
         break if page_no > 300
       end
     end
+  end
+
+  task :daily_cron_99acres => :environment do 
+    CITY_URLS["99acres"].each do |city_url|
+      page_no = 1
+      broker_count = 0
+      packages = Package.all.as_json.inject({}){|hash,a| hash[a["name"]] = a["id"]; hash}
+      while(1) do 
+        product_ids = get_product_ids(city_url, page_no)
+        product_ids.each do |id|
+          details = get_product_details(id)
+          b, p, package, city, flag = handle_sub_unsub(details, id, packages)
+          if flag == "subscribed" || flag == "unsubscribed"
+            puts "saved brokers #{broker_count += 1}, Broker: #{b}, Property: #{p}, Package: #{package}, City: #{city}, flag: #{flag}"
+          else
+            puts "nothing"
+          end
+        end
+        page_no += 1
+        break if page_no > 300
+      end
+    end
+
   end
 
 end 
