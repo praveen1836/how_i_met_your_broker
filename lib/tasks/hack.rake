@@ -17,6 +17,7 @@ namespace :hack do
   end
 
   def store_broker_details details, id, packages
+    logger = Logger.new("#{Rails.root}/log/mismatch_package.log")
     phone = details["advertiserDetails"][0]["OwnerMobile"]
     params = {}
     b_details = details["eCommTrackData"].first
@@ -32,6 +33,9 @@ namespace :hack do
     if b.present?
       p = Property.find_by(:property_id => id, :broker_id => b.id)
       return b.id, p.id, b_details["product_type"], b.city  if p.present?
+      if (b.package_id.to_i != packages[b_details["product_type"]].to_i)
+        logger << "Broker: #{b.id}, saved: -#{b.package_id}-, property: -#{packages[b_details["product_type"]].to_i}-\n" 
+      end
       property_params = {:property_id => id, :broker_id => b.id}
       p = Property.create(property_params)
       return b.id, p.id, b_details["product_type"], b.city
@@ -65,7 +69,7 @@ namespace :hack do
         product_ids = get_product_ids(city_url, page_no)
         product_ids.each do |id|
           details = get_product_details(id)
-          if details["eCommTrackData"][0]["product_type"] != "Free Listing"
+          if details["eCommTrackData"][0]["product_type"] != "Free listing"
             b, p, package, city = store_broker_details(details, id, packages)
             puts "saved brokers #{broker_count += 1}, Broker: #{b}, Property: #{p}, Package: #{package}, City: #{city}"
           end
