@@ -17,6 +17,7 @@ namespace :hack do
   end
 
   def store_broker_details details, id, packages
+    logger = Logger.new("#{Rails.root}/log/mismatch_package.log")
     phone = details["advertiserDetails"][0]["OwnerMobile"]
     params = {}
     b_details = details["eCommTrackData"].first
@@ -32,6 +33,9 @@ namespace :hack do
     if b.present?
       p = Property.find_by(:property_id => id, :broker_id => b.id)
       return b.id, p.id, b_details["product_type"], b.city  if p.present?
+      if (b.package_id.to_i != packages[b_details["product_type"]].to_i)
+        logger << "Broker: #{b.id}, saved: -#{b.package_id}-, property: -#{packages[b_details["product_type"]].to_i}-\n" 
+      end
       property_params = {:property_id => id, :broker_id => b.id}
       p = Property.create(property_params)
       return b.id, p.id, b_details["product_type"], b.city
@@ -73,6 +77,15 @@ namespace :hack do
         page_no += 1
         break if page_no > 300
       end
+    end
+  end
+
+  task :cleanup => :environment do
+    Broker.where("LENGTH(phone_number) > 13").each do |broker|
+      puts broker.phone_number + "-#{broker.id}"
+      # phone = broker.phone_number.split(',').second
+      # broker.phone_number = phone
+      # puts broker.save
     end
   end
 
